@@ -45,6 +45,8 @@ TIM_HandleTypeDef htim11;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+float RealDegree = 0;
+uint64_t _micros = 0;
 
 /* USER CODE END PV */
 
@@ -55,7 +57,8 @@ static void MX_USART2_UART_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
-
+void UpdatePosition();
+uint64_t micros();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -95,6 +98,10 @@ int main(void)
   MX_TIM11_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+  //start Microsec timer
+  HAL_TIM_Base_Start_IT(&htim11);
+  //start Encoder TIM
+  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 
   /* USER CODE END 2 */
 
@@ -105,6 +112,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  UpdatePosition();
+
   }
   /* USER CODE END 3 */
 }
@@ -301,7 +310,24 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void UpdatePosition()
+{
+	uint16_t RawRead = TIM1->CNT;
+	RealDegree = (RawRead/3072.0)*360.0;
+}
 
+uint64_t micros()
+{
+	return _micros + htim11.Instance->CNT;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+ if(htim == &htim11)
+ {
+	 _micros += 65535;
+ }
+}
 /* USER CODE END 4 */
 
 /**
