@@ -21,6 +21,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#define ARM_MATH_CM4
+#include "arm_math.h"
 
 /* USER CODE END Includes */
 
@@ -48,6 +50,21 @@ UART_HandleTypeDef huart2;
 float RealDegree = 0;
 uint64_t _micros = 0;
 
+float32_t A[4] =
+{
+	1,	2,
+	3, 	4
+};
+
+float32_t B[4] =
+{
+	2,	2,
+	2, 	2
+};
+
+arm_matrix_instance_f32 AA;
+arm_matrix_instance_f32 BB;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,6 +90,10 @@ uint64_t micros();
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+	arm_mat_init_f32(&AA,2,2,A);
+	arm_mat_init_f32(&BB,2,2,B);
+	arm_mat_trans_f32(&AA, &BB);
 
   /* USER CODE END 1 */
 
