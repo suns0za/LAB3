@@ -51,20 +51,13 @@ UART_HandleTypeDef huart2;
 float RealDegree = 0;
 uint64_t _micros = 0;
 
-uint8_t delta_t = 0.01;
-
-float32_t Default[9] =
-{
-	0,	0,	0,
-	0, 	0,	0,
-	0,	0,	0
-};
+const float delta_t = 0.01;
 
 float32_t A_data[9] =
 {
-	0,	0,	0,
-	0, 	0,	0,
-	0,	0,	0
+	1,	delta_t,	delta_t*delta_t/2.0,
+	0, 	1,			delta_t,
+	0,	0,			1
 };
 
 float32_t B_data[3] =
@@ -76,7 +69,7 @@ float32_t B_data[3] =
 
 float32_t C_data[3] =
 {
-	0,	0,	0
+	1,	0,	0
 };
 
 float32_t D_data[1] =
@@ -86,9 +79,9 @@ float32_t D_data[1] =
 
 float32_t G_data[3] =
 {
-	0,
-	0,
-	0
+	delta_t*delta_t*delta_t/6.0,
+	delta_t*delta_t/2.0,
+	delta_t
 };
 
 float32_t U_data[1] =
@@ -108,14 +101,19 @@ float32_t Y_data[1] =
 	0
 };
 
+float32_t Default[];
+
 arm_matrix_instance_f32 A;
 arm_matrix_instance_f32 B;
 arm_matrix_instance_f32 C;
 arm_matrix_instance_f32 D;
 arm_matrix_instance_f32 G;
+arm_matrix_instance_f32 G_t;
 arm_matrix_instance_f32 U;
 arm_matrix_instance_f32 X;
 arm_matrix_instance_f32 Y;
+
+arm_matrix_instance_f32 GG_t;
 
 
 
@@ -150,9 +148,15 @@ int main(void)
 
 	arm_mat_init_f32(&A,3,3,A_data);
 	arm_mat_init_f32(&B,3,1,B_data);
+	arm_mat_init_f32(&C,1,3,C_data);
+	arm_mat_init_f32(&D,1,1,D_data);
+	arm_mat_init_f32(&G,3,1,G_data);
+	arm_mat_init_f32(&G_t,1,3,Default);
+	arm_mat_init_f32(&GG_t,3,3,Default);
 
-	arm_mat_trans_f32(&A, &B);
-	arm_mat_mult_f32(&A,&B,&C);
+	arm_mat_trans_f32(&G, &G_t);
+
+	arm_mat_mult_f32(&G,&G_t,&GG_t);
 
   /* USER CODE END 1 */
 
@@ -457,7 +461,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  }
  if(htim == &htim3)
  {
-
+	 	 y->CNT
  }
 }
 /* USER CODE END 4 */
