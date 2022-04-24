@@ -42,6 +42,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
+TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart2;
@@ -50,20 +51,73 @@ UART_HandleTypeDef huart2;
 float RealDegree = 0;
 uint64_t _micros = 0;
 
-float32_t A[4] =
+uint8_t delta_t = 0.01;
+
+float32_t Default[9] =
 {
-	1,	2,
-	3, 	4
+	0,	0,	0,
+	0, 	0,	0,
+	0,	0,	0
 };
 
-float32_t B[4] =
+float32_t A_data[9] =
 {
-	2,	2,
-	2, 	2
+	0,	0,	0,
+	0, 	0,	0,
+	0,	0,	0
 };
 
-arm_matrix_instance_f32 AA;
-arm_matrix_instance_f32 BB;
+float32_t B_data[3] =
+{
+	0,
+	0,
+	0
+};
+
+float32_t C_data[3] =
+{
+	0,	0,	0
+};
+
+float32_t D_data[1] =
+{
+	0
+};
+
+float32_t G_data[3] =
+{
+	0,
+	0,
+	0
+};
+
+float32_t U_data[1] =
+{
+	0
+};
+
+float32_t X_data[3] =
+{
+	0,
+	0,
+	0
+};
+
+float32_t Y_data[1] =
+{
+	0
+};
+
+arm_matrix_instance_f32 A;
+arm_matrix_instance_f32 B;
+arm_matrix_instance_f32 C;
+arm_matrix_instance_f32 D;
+arm_matrix_instance_f32 G;
+arm_matrix_instance_f32 U;
+arm_matrix_instance_f32 X;
+arm_matrix_instance_f32 Y;
+
+
 
 /* USER CODE END PV */
 
@@ -73,6 +127,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_TIM1_Init(void);
+static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void UpdatePosition();
 uint64_t micros();
@@ -90,10 +145,14 @@ uint64_t micros();
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	uint8_t RowNum = 3;
+	uint8_t ColumnNum = 3;
 
-	arm_mat_init_f32(&AA,2,2,A);
-	arm_mat_init_f32(&BB,2,2,B);
-	arm_mat_trans_f32(&AA, &BB);
+	arm_mat_init_f32(&A,3,3,A_data);
+	arm_mat_init_f32(&B,3,1,B_data);
+
+	arm_mat_trans_f32(&A, &B);
+	arm_mat_mult_f32(&A,&B,&C);
 
   /* USER CODE END 1 */
 
@@ -118,9 +177,12 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM11_Init();
   MX_TIM1_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   //start Microsec timer
   HAL_TIM_Base_Start_IT(&htim11);
+  //start TIM for sampling time at 0.01 or 100 Hz
+  HAL_TIM_Base_Start_IT(&htim3);
   //start Encoder TIM
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 
@@ -230,6 +292,51 @@ static void MX_TIM1_Init(void)
   /* USER CODE BEGIN TIM1_Init 2 */
 
   /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
+
+  /* USER CODE BEGIN TIM3_Init 0 */
+
+  /* USER CODE END TIM3_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM3_Init 1 */
+
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 99;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 99;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
+
+  /* USER CODE END TIM3_Init 2 */
 
 }
 
@@ -347,6 +454,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  if(htim == &htim11)
  {
 	 _micros += 65535;
+ }
+ if(htim == &htim3)
+ {
+
  }
 }
 /* USER CODE END 4 */
