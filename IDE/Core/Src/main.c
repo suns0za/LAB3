@@ -52,6 +52,7 @@ float RealDegree = 0;
 uint64_t _micros = 0;
 
 const float delta_t = 0.01;
+float Ysensor = 0;
 
 float32_t A_data[9] =
 {
@@ -101,6 +102,13 @@ float32_t Y_data[1] =
 	0
 };
 
+float32_t I_data[9] =
+{
+	1,	0,	0,
+	0,	1,	0,
+	0,	0,	1
+};
+
 float32_t At_data[9];
 float32_t Ct_data[3];
 float32_t Gt_data[3];
@@ -121,10 +129,14 @@ float32_t Yp1_data[1];
 float32_t Yp2_data[1];
 float32_t Yd_data[1];
 float32_t S_data[1];
+float32_t Si_data[1];
 float32_t R_data[1];
 float32_t PpCt_data[3];
 float32_t CPpCt_data[1];
-float32_t K[3];
+float32_t K_data[3];
+float32_t KYd_data[3];
+float32_t KC_data[9];
+float32_t IKC_data[9];
 
 arm_matrix_instance_f32 A;
 arm_matrix_instance_f32 At;
@@ -137,6 +149,8 @@ arm_matrix_instance_f32 Gt;
 arm_matrix_instance_f32 U;
 arm_matrix_instance_f32 X;
 arm_matrix_instance_f32 Y;
+arm_matrix_instance_f32 I;
+
 
 arm_matrix_instance_f32 Xp;
 arm_matrix_instance_f32 Xp1;
@@ -153,10 +167,14 @@ arm_matrix_instance_f32 Yp2;
 arm_matrix_instance_f32 Yd;
 
 arm_matrix_instance_f32 S;
+arm_matrix_instance_f32 Si;
 arm_matrix_instance_f32 R;
 arm_matrix_instance_f32 PpCt;
 arm_matrix_instance_f32 CPpCt;
 arm_matrix_instance_f32 K;
+arm_matrix_instance_f32 KYd;
+arm_matrix_instance_f32 KC;
+arm_matrix_instance_f32 IKC;
 
 /* USER CODE END PV */
 
@@ -169,6 +187,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void UpdatePosition();
+void Kalman();
 uint64_t micros();
 /* USER CODE END PFP */
 
@@ -194,7 +213,8 @@ int main(void)
 	arm_mat_init_f32(&Gt,1,3,Gt_data);
 	arm_mat_init_f32(&U,1,1,U_data);
 	arm_mat_init_f32(&X,3,1,X_data);
-	arm_mat_init_f32(&Y,1,1,Y_data);
+	arm_mat_init_f32(&Y,1,1,Ysensor);
+	arm_mat_init_f32(&I,3,3,I_data);
 
 	arm_mat_init_f32(&Xp,3,1,Xp_data);
 	arm_mat_init_f32(&Xp1,3,1,Xp1_data);
@@ -211,34 +231,14 @@ int main(void)
 	arm_mat_init_f32(&Yd,1,1,Yd_data);
 
 	arm_mat_init_f32(&S,1,1,S_data);
+	arm_mat_init_f32(&Si,1,1,Si_data);
 	arm_mat_init_f32(&R,1,1,R_data);
 	arm_mat_init_f32(&PpCt,3,1,PpCt_data);
-	arm_mat_init_f32(&CPpCt,1,1,PpCPt_data);
+	arm_mat_init_f32(&CPpCt,1,1,CPpCt_data);
 	arm_mat_init_f32(&K,3,1,K_data);
-	//---------------------------------------------------------------
-	arm_mat_mult_f32(&A,&X,&Xp1);
-	arm_mat_mult_f32(&B,&U,&Xp2);
-	arm_mat_add_f32(&Xp1,&Xp2,&Xp);
-
-	arm_mat_trans_f32(&A,&At);
-	arm_mat_mult_f32(&P,&At,&APAt);
-	arm_mat_mult_f32(&A,&APAt,&APAt);
-	arm_mat_trans_f32(&G, &Gt);
-	arm_mat_mult_f32(&G,&Gt,&Q);
-	arm_mat_scale_f32(&Q,0.1,&Q);
-	arm_mat_add_f32(&APAt,&Q,&Pp);
-
-	arm_mat_mult_f32(&C,&Xp,&Yp1);
-	arm_mat_mult_f32(&D,&U,&Yp2);
-	arm_mat_add_f32(&Yp1,&Yp2,&Yp);
-	arm_mat_scale_f32(&Yp,-1,&Yp);
-	arm_mat_add_f32(&Y,&Yp,&Yd);
-
-	arm_mat_trans_f32(&C, &Ct);
-	arm_mat_mult_f32(&Pp,&Ct,&PpCt);
-	arm_mat_mult_f32(&C,&PpCt,&CPpCt);
-	arm_mat_add_f32(&CPpCt,&R,&S);
-
+	arm_mat_init_f32(&KYd,3,1,KYd_data);
+	arm_mat_init_f32(&KC,3,3,KC_data);
+	arm_mat_init_f32(&IKC,3,3,IKC_data);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -401,7 +401,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 99;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 99;
+  htim3.Init.Period = 9999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -441,7 +441,7 @@ static void MX_TIM11_Init(void)
 
   /* USER CODE END TIM11_Init 1 */
   htim11.Instance = TIM11;
-  htim11.Init.Prescaler = 99;
+  htim11.Init.Prescaler = 0;
   htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim11.Init.Period = 65535;
   htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -534,6 +534,42 @@ uint64_t micros()
 	return _micros + htim11.Instance->CNT;
 }
 
+void Kalman()
+{
+	arm_mat_mult_f32(&A,&X,&Xp1);
+	arm_mat_mult_f32(&B,&U,&Xp2);
+	arm_mat_add_f32(&Xp1,&Xp2,&Xp);
+
+	arm_mat_trans_f32(&A,&At);
+	arm_mat_mult_f32(&P,&At,&APAt);
+	arm_mat_mult_f32(&A,&APAt,&APAt);
+	arm_mat_trans_f32(&G, &Gt);
+	arm_mat_mult_f32(&G,&Gt,&Q);
+	arm_mat_scale_f32(&Q,0.1,&Q);
+	arm_mat_add_f32(&APAt,&Q,&Pp);
+
+	arm_mat_mult_f32(&C,&Xp,&Yp1);
+	arm_mat_mult_f32(&D,&U,&Yp2);
+	arm_mat_add_f32(&Yp1,&Yp2,&Yp);
+	arm_mat_scale_f32(&Yp,-1,&Yp);
+	arm_mat_add_f32(&Y,&Yp,&Yd);
+
+	arm_mat_trans_f32(&C, &Ct);
+	arm_mat_mult_f32(&Pp,&Ct,&PpCt);
+	arm_mat_mult_f32(&C,&PpCt,&CPpCt);
+	arm_mat_add_f32(&CPpCt,&R,&S);
+	arm_mat_mult_f32(&Pp,&Ct,&K);
+	arm_mat_inverse_f32(&S,&Si);
+	arm_mat_mult_f32(&K,&Si,&K);
+
+	arm_mat_mult_f32(&K,&Yd,&KYd);
+	arm_mat_add_f32(&Xp,&KYd,&X);
+	arm_mat_mult_f32(&K,&C,&KC);
+	arm_mat_scale_f32(&KC,-1,&KC);
+	arm_mat_add_f32(&I,&KC,&IKC);
+	arm_mat_mult_f32(&IKC,&Pp,&P);
+}
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
  if(htim == &htim11)
@@ -542,7 +578,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  }
  if(htim == &htim3)
  {
-
+	 Ysensor = 1;
+	 Kalman();
  }
 }
 /* USER CODE END 4 */
