@@ -101,21 +101,62 @@ float32_t Y_data[1] =
 	0
 };
 
-float32_t Default[];
+float32_t At_data[9];
+float32_t Ct_data[3];
+float32_t Gt_data[3];
+float32_t Xp_data[3];
+float32_t Xp1_data[3];
+float32_t Xp2_data[3];
+float32_t P_data[9] =
+{
+	1,	0,	0,
+	0,	1,	0,
+	0,	0,	1
+};
+float32_t Pp_data[9];
+float32_t APAt_data[9];
+float32_t Q_data[9];
+float32_t Yp_data[1];
+float32_t Yp1_data[1];
+float32_t Yp2_data[1];
+float32_t Yd_data[1];
+float32_t S_data[1];
+float32_t R_data[1];
+float32_t PpCt_data[3];
+float32_t CPpCt_data[1];
+float32_t K[3];
 
 arm_matrix_instance_f32 A;
+arm_matrix_instance_f32 At;
 arm_matrix_instance_f32 B;
 arm_matrix_instance_f32 C;
+arm_matrix_instance_f32 Ct;
 arm_matrix_instance_f32 D;
 arm_matrix_instance_f32 G;
-arm_matrix_instance_f32 G_t;
+arm_matrix_instance_f32 Gt;
 arm_matrix_instance_f32 U;
 arm_matrix_instance_f32 X;
 arm_matrix_instance_f32 Y;
 
-arm_matrix_instance_f32 GG_t;
+arm_matrix_instance_f32 Xp;
+arm_matrix_instance_f32 Xp1;
+arm_matrix_instance_f32 Xp2;
 
+arm_matrix_instance_f32 P;
+arm_matrix_instance_f32 Pp;
+arm_matrix_instance_f32 APAt;
+arm_matrix_instance_f32 Q;
 
+arm_matrix_instance_f32 Yp;
+arm_matrix_instance_f32 Yp1;
+arm_matrix_instance_f32 Yp2;
+arm_matrix_instance_f32 Yd;
+
+arm_matrix_instance_f32 S;
+arm_matrix_instance_f32 R;
+arm_matrix_instance_f32 PpCt;
+arm_matrix_instance_f32 CPpCt;
+arm_matrix_instance_f32 K;
 
 /* USER CODE END PV */
 
@@ -143,20 +184,60 @@ uint64_t micros();
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint8_t RowNum = 3;
-	uint8_t ColumnNum = 3;
-
 	arm_mat_init_f32(&A,3,3,A_data);
+	arm_mat_init_f32(&At,3,3,At_data);
 	arm_mat_init_f32(&B,3,1,B_data);
 	arm_mat_init_f32(&C,1,3,C_data);
+	arm_mat_init_f32(&Ct,3,1,Ct_data);
 	arm_mat_init_f32(&D,1,1,D_data);
 	arm_mat_init_f32(&G,3,1,G_data);
-	arm_mat_init_f32(&G_t,1,3,Default);
-	arm_mat_init_f32(&GG_t,3,3,Default);
+	arm_mat_init_f32(&Gt,1,3,Gt_data);
+	arm_mat_init_f32(&U,1,1,U_data);
+	arm_mat_init_f32(&X,3,1,X_data);
+	arm_mat_init_f32(&Y,1,1,Y_data);
 
-	arm_mat_trans_f32(&G, &G_t);
+	arm_mat_init_f32(&Xp,3,1,Xp_data);
+	arm_mat_init_f32(&Xp1,3,1,Xp1_data);
+	arm_mat_init_f32(&Xp2,3,1,Xp2_data);
 
-	arm_mat_mult_f32(&G,&G_t,&GG_t);
+	arm_mat_init_f32(&P,3,3,P_data);
+	arm_mat_init_f32(&Pp,3,3,Pp_data);
+	arm_mat_init_f32(&APAt,3,3,APAt_data);
+	arm_mat_init_f32(&Q,3,3,Q_data);
+
+	arm_mat_init_f32(&Y,1,1,Yp_data);
+	arm_mat_init_f32(&Yp1,1,1,Yp1_data);
+	arm_mat_init_f32(&Yp2,1,1,Yp2_data);
+	arm_mat_init_f32(&Yd,1,1,Yd_data);
+
+	arm_mat_init_f32(&S,1,1,S_data);
+	arm_mat_init_f32(&R,1,1,R_data);
+	arm_mat_init_f32(&PpCt,3,1,PpCt_data);
+	arm_mat_init_f32(&CPpCt,1,1,PpCPt_data);
+	arm_mat_init_f32(&K,3,1,K_data);
+	//---------------------------------------------------------------
+	arm_mat_mult_f32(&A,&X,&Xp1);
+	arm_mat_mult_f32(&B,&U,&Xp2);
+	arm_mat_add_f32(&Xp1,&Xp2,&Xp);
+
+	arm_mat_trans_f32(&A,&At);
+	arm_mat_mult_f32(&P,&At,&APAt);
+	arm_mat_mult_f32(&A,&APAt,&APAt);
+	arm_mat_trans_f32(&G, &Gt);
+	arm_mat_mult_f32(&G,&Gt,&Q);
+	arm_mat_scale_f32(&Q,0.1,&Q);
+	arm_mat_add_f32(&APAt,&Q,&Pp);
+
+	arm_mat_mult_f32(&C,&Xp,&Yp1);
+	arm_mat_mult_f32(&D,&U,&Yp2);
+	arm_mat_add_f32(&Yp1,&Yp2,&Yp);
+	arm_mat_scale_f32(&Yp,-1,&Yp);
+	arm_mat_add_f32(&Y,&Yp,&Yd);
+
+	arm_mat_trans_f32(&C, &Ct);
+	arm_mat_mult_f32(&Pp,&Ct,&PpCt);
+	arm_mat_mult_f32(&C,&PpCt,&CPpCt);
+	arm_mat_add_f32(&CPpCt,&R,&S);
 
   /* USER CODE END 1 */
 
@@ -461,7 +542,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  }
  if(htim == &htim3)
  {
-	 	 y->CNT
+
  }
 }
 /* USER CODE END 4 */
