@@ -23,7 +23,8 @@
 /* USER CODE BEGIN Includes */
 #define ARM_MATH_CM4
 #include "arm_math.h"
-
+#define _USE_MATH_DEFINES
+#include "math.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,6 +57,9 @@ float AbsDegree_Past = 0.0;
 float Velocity = 0.0;
 float Velocity_Past = 0.0;
 float Acceleration = 0.0;
+float AbsDegree_kalman = 0.0;
+float Velocity_kalman = 0.0;
+float Acceleration_kalman = 0.0;
 
 uint64_t TimeStamp = 0;
 uint64_t TimeStamp_Past = 0;
@@ -549,7 +553,8 @@ static void MX_GPIO_Init(void)
 void UpdatePosition()
 {
 	uint16_t RawRead = TIM1->CNT;
-	RealDegree = (RawRead/3072.0)*360.0;
+//	RealDegree = (RawRead/3072.0)*360.0;
+	RealDegree = (RawRead/3072.0)*(2*M_PI);
 }
 
 uint64_t micros()
@@ -590,14 +595,14 @@ void Kalman()
 void Unwrapped()
 {
 	static uint8_t check = 0;
-	if(RealDegree - Degree_Past <= -180 && check != 0)
+	if(RealDegree - Degree_Past <= -M_PI && check != 0)
 	{
-		Degree_offset = Degree_offset + 360;
+		Degree_offset = Degree_offset + (2*M_PI);
 		AbsDegree = Degree_offset + RealDegree;
 	}
-	else if(RealDegree - Degree_Past >= 180 && check != 0)
+	else if(RealDegree - Degree_Past >= M_PI && check != 0)
 	{
-		Degree_offset = Degree_offset - 360;
+		Degree_offset = Degree_offset - (2*M_PI);
 		AbsDegree = Degree_offset + RealDegree;
 	}
 	else
@@ -610,13 +615,15 @@ void Unwrapped()
 
 void Calculate_Velocity()
 {
-	Velocity = (AbsDegree - AbsDegree_Past)/((TimeStamp - TimeStamp_Past)/1000000);
+//	Velocity = (AbsDegree - AbsDegree_Past)/((TimeStamp - TimeStamp_Past)/1000000);
+	Velocity = (AbsDegree - AbsDegree_Past)/0.01;
 	AbsDegree_Past = AbsDegree;
 }
 
 void Calculate_Acceleration()
 {
-	Acceleration = (Velocity - Velocity_Past)/((TimeStamp - TimeStamp_Past)/1000000);
+//	Acceleration = (Velocity - Velocity_Past)/((TimeStamp - TimeStamp_Past)/1000000);
+	Acceleration = (Velocity - Velocity_Past)/0.01;
 	Velocity_Past = Velocity;
 }
 
@@ -629,13 +636,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  if(htim == &htim3)
  {
 	 Unwrapped();
-	 TimeStamp = _micros;
+//	 TimeStamp = _micros;
 	 Calculate_Velocity();
 	 Calculate_Acceleration();
-	 TimeStamp_Past = TimeStamp;
+//	 TimeStamp_Past = TimeStamp;
 	 Y_data[0] = AbsDegree;
 	 Kalman();
-
+	 AbsDegree_kalman = X_data[0];
+	 Velocity_kalman = X_data[1];
+	 Acceleration_kalman = X_data[2];
  }
 }
 /* USER CODE END 4 */
