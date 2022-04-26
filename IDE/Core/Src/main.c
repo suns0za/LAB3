@@ -48,34 +48,43 @@ TIM_HandleTypeDef htim11;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-float RealDegree = 0;
+float RealDegree = 0.0;
+float Degree_Past = 0.0;
+float Degree_offset = 0.0;
+float AbsDegree = 0.0;
+float AbsDegree_Past = 0.0;
+float Velocity = 0.0;
+float Velocity_Past = 0.0;
+float Acceleration = 0.0;
+
+uint64_t TimeStamp = 0;
+uint64_t TimeStamp_Past = 0;
 uint64_t _micros = 0;
 
 const float delta_t = 0.01;
-float Ysensor = 0;
 
 float32_t A_data[9] =
 {
-	1,	delta_t,	delta_t*delta_t/2.0,
-	0, 	1,			delta_t,
-	0,	0,			1
+	1.0,	delta_t,	delta_t*delta_t/2.0,
+	0.0, 	1.0,			delta_t,
+	0.0,	0.0,			1.0
 };
 
 float32_t B_data[3] =
 {
-	0,
-	0,
-	0
+	0.0,
+	0.0,
+	0.0
 };
 
 float32_t C_data[3] =
 {
-	1,	0,	0
+	1.0,	0.0,	0.0
 };
 
 float32_t D_data[1] =
 {
-	0
+	0.0
 };
 
 float32_t G_data[3] =
@@ -87,26 +96,26 @@ float32_t G_data[3] =
 
 float32_t U_data[1] =
 {
-	0
+	0.0
 };
 
 float32_t X_data[3] =
 {
-	0,
-	0,
-	0
+	0.0,
+	0.0,
+	0.0
 };
 
 float32_t Y_data[1] =
 {
-	0
+	0.0
 };
 
 float32_t I_data[9] =
 {
-	1,	0,	0,
-	0,	1,	0,
-	0,	0,	1
+	1.0,	0.0,	0.0,
+	0.0,	1.0,	0.0,
+	0.0,	0.0,	1.0
 };
 
 float32_t At_data[9];
@@ -117,9 +126,9 @@ float32_t Xp1_data[3];
 float32_t Xp2_data[3];
 float32_t P_data[9] =
 {
-	1,	0,	0,
-	0,	1,	0,
-	0,	0,	1
+	0.0,	0.0,	0.0,
+	0.0,	0.0,	0.0,
+	0.0,	0.0,	0.0
 };
 float32_t Pp_data[9];
 float32_t APAt_data[9];
@@ -130,7 +139,10 @@ float32_t Yp2_data[1];
 float32_t Yd_data[1];
 float32_t S_data[1];
 float32_t Si_data[1];
-float32_t R_data[1];
+float32_t R_data[1] =
+{
+	0.0001
+};
 float32_t PpCt_data[3];
 float32_t CPpCt_data[1];
 float32_t K_data[3];
@@ -187,6 +199,9 @@ static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
 void UpdatePosition();
+void Calculate_Velocity();
+void Calculate_Acceleration();
+void Unwrapped();
 void Kalman();
 uint64_t micros();
 /* USER CODE END PFP */
@@ -213,7 +228,7 @@ int main(void)
 	arm_mat_init_f32(&Gt,1,3,Gt_data);
 	arm_mat_init_f32(&U,1,1,U_data);
 	arm_mat_init_f32(&X,3,1,X_data);
-	arm_mat_init_f32(&Y,1,1,Ysensor);
+	arm_mat_init_f32(&Y,1,1,Y_data);
 	arm_mat_init_f32(&I,3,3,I_data);
 
 	arm_mat_init_f32(&Xp,3,1,Xp_data);
@@ -225,7 +240,7 @@ int main(void)
 	arm_mat_init_f32(&APAt,3,3,APAt_data);
 	arm_mat_init_f32(&Q,3,3,Q_data);
 
-	arm_mat_init_f32(&Y,1,1,Yp_data);
+	arm_mat_init_f32(&Yp,1,1,Yp_data);
 	arm_mat_init_f32(&Yp1,1,1,Yp1_data);
 	arm_mat_init_f32(&Yp2,1,1,Yp2_data);
 	arm_mat_init_f32(&Yd,1,1,Yd_data);
@@ -239,6 +254,14 @@ int main(void)
 	arm_mat_init_f32(&KYd,3,1,KYd_data);
 	arm_mat_init_f32(&KC,3,3,KC_data);
 	arm_mat_init_f32(&IKC,3,3,IKC_data);
+	//------------------------------------------------------
+	arm_mat_trans_f32(&A,&At);
+	arm_mat_trans_f32(&G, &Gt);
+	arm_mat_mult_f32(&G,&Gt,&Q);
+	arm_mat_scale_f32(&Q,0.5,&Q);
+	arm_mat_trans_f32(&C, &Ct);
+
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -540,21 +563,15 @@ void Kalman()
 	arm_mat_mult_f32(&B,&U,&Xp2);
 	arm_mat_add_f32(&Xp1,&Xp2,&Xp);
 
-	arm_mat_trans_f32(&A,&At);
 	arm_mat_mult_f32(&P,&At,&APAt);
 	arm_mat_mult_f32(&A,&APAt,&APAt);
-	arm_mat_trans_f32(&G, &Gt);
-	arm_mat_mult_f32(&G,&Gt,&Q);
-	arm_mat_scale_f32(&Q,0.1,&Q);
 	arm_mat_add_f32(&APAt,&Q,&Pp);
 
 	arm_mat_mult_f32(&C,&Xp,&Yp1);
 	arm_mat_mult_f32(&D,&U,&Yp2);
 	arm_mat_add_f32(&Yp1,&Yp2,&Yp);
-	arm_mat_scale_f32(&Yp,-1,&Yp);
-	arm_mat_add_f32(&Y,&Yp,&Yd);
+	arm_mat_sub_f32(&Y,&Yp,&Yd);
 
-	arm_mat_trans_f32(&C, &Ct);
 	arm_mat_mult_f32(&Pp,&Ct,&PpCt);
 	arm_mat_mult_f32(&C,&PpCt,&CPpCt);
 	arm_mat_add_f32(&CPpCt,&R,&S);
@@ -564,10 +581,43 @@ void Kalman()
 
 	arm_mat_mult_f32(&K,&Yd,&KYd);
 	arm_mat_add_f32(&Xp,&KYd,&X);
+
 	arm_mat_mult_f32(&K,&C,&KC);
-	arm_mat_scale_f32(&KC,-1,&KC);
-	arm_mat_add_f32(&I,&KC,&IKC);
+	arm_mat_sub_f32(&I,&KC,&IKC);
 	arm_mat_mult_f32(&IKC,&Pp,&P);
+}
+
+void Unwrapped()
+{
+	static uint8_t check = 0;
+	if(RealDegree - Degree_Past <= -180 && check != 0)
+	{
+		Degree_offset = Degree_offset + 360;
+		AbsDegree = Degree_offset + RealDegree;
+	}
+	else if(RealDegree - Degree_Past >= 180 && check != 0)
+	{
+		Degree_offset = Degree_offset - 360;
+		AbsDegree = Degree_offset + RealDegree;
+	}
+	else
+	{
+		check = 1;
+		AbsDegree = Degree_offset + RealDegree;
+	}
+	Degree_Past = RealDegree;
+}
+
+void Calculate_Velocity()
+{
+	Velocity = (AbsDegree - AbsDegree_Past)/((TimeStamp - TimeStamp_Past)/1000000);
+	AbsDegree_Past = AbsDegree;
+}
+
+void Calculate_Acceleration()
+{
+	Acceleration = (Velocity - Velocity_Past)/((TimeStamp - TimeStamp_Past)/1000000);
+	Velocity_Past = Velocity;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -578,8 +628,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
  }
  if(htim == &htim3)
  {
-	 Ysensor = 1;
+	 Unwrapped();
+	 TimeStamp = _micros;
+	 Calculate_Velocity();
+	 Calculate_Acceleration();
+	 TimeStamp_Past = TimeStamp;
+	 Y_data[0] = AbsDegree;
 	 Kalman();
+
  }
 }
 /* USER CODE END 4 */
