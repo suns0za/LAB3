@@ -44,7 +44,6 @@
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart2;
 
@@ -61,11 +60,7 @@ float AbsDegree_kalman = 0.0;
 float Velocity_kalman = 0.0;
 float Acceleration_kalman = 0.0;
 
-uint64_t TimeStamp = 0;
-uint64_t TimeStamp_Past = 0;
-uint64_t _micros = 0;
-
-const float delta_t = 0.01;
+const float delta_t = 0.1;
 
 float32_t A_data[9] =
 {
@@ -198,7 +193,6 @@ arm_matrix_instance_f32 IKC;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_TIM11_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 /* USER CODE BEGIN PFP */
@@ -207,7 +201,6 @@ void Calculate_Velocity();
 void Calculate_Acceleration();
 void Unwrapped();
 void Kalman();
-uint64_t micros();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -287,7 +280,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  MX_TIM11_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
@@ -426,7 +418,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 99;
+  htim3.Init.Prescaler = 999;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 9999;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -449,37 +441,6 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
-
-}
-
-/**
-  * @brief TIM11 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM11_Init(void)
-{
-
-  /* USER CODE BEGIN TIM11_Init 0 */
-
-  /* USER CODE END TIM11_Init 0 */
-
-  /* USER CODE BEGIN TIM11_Init 1 */
-
-  /* USER CODE END TIM11_Init 1 */
-  htim11.Instance = TIM11;
-  htim11.Init.Prescaler = 0;
-  htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim11.Init.Period = 65535;
-  htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM11_Init 2 */
-
-  /* USER CODE END TIM11_Init 2 */
 
 }
 
@@ -557,11 +518,6 @@ void UpdatePosition()
 	RealDegree = (RawRead/3072.0)*(2*M_PI);
 }
 
-uint64_t micros()
-{
-	return _micros + htim11.Instance->CNT;
-}
-
 void Kalman()
 {
 	arm_mat_mult_f32(&A,&X,&Xp1);
@@ -615,31 +571,23 @@ void Unwrapped()
 
 void Calculate_Velocity()
 {
-//	Velocity = (AbsDegree - AbsDegree_Past)/((TimeStamp - TimeStamp_Past)/1000000);
-	Velocity = (AbsDegree - AbsDegree_Past)/0.01;
+	Velocity = (AbsDegree - AbsDegree_Past)/0.1;
 	AbsDegree_Past = AbsDegree;
 }
 
 void Calculate_Acceleration()
 {
-//	Acceleration = (Velocity - Velocity_Past)/((TimeStamp - TimeStamp_Past)/1000000);
-	Acceleration = (Velocity - Velocity_Past)/0.01;
+	Acceleration = (Velocity - Velocity_Past)/0.1;
 	Velocity_Past = Velocity;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
- if(htim == &htim11)
- {
-	 _micros += 65535;
- }
  if(htim == &htim3)
  {
 	 Unwrapped();
-//	 TimeStamp = _micros;
 	 Calculate_Velocity();
 	 Calculate_Acceleration();
-//	 TimeStamp_Past = TimeStamp;
 	 Y_data[0] = AbsDegree;
 	 Kalman();
 	 AbsDegree_kalman = X_data[0];

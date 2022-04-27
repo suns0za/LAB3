@@ -1789,79 +1789,78 @@ static void MX_TIM3_Init(void)
  80012ac:	4b1d      	ldr	r3, [pc, #116]	; (8001324 <MX_TIM3_Init+0x94>)
  80012ae:	4a1e      	ldr	r2, [pc, #120]	; (8001328 <MX_TIM3_Init+0x98>)
  80012b0:	601a      	str	r2, [r3, #0]
-  htim3.Init.Prescaler = 99;
+  htim3.Init.Prescaler = 999;
  80012b2:	4b1c      	ldr	r3, [pc, #112]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012b4:	2263      	movs	r2, #99	; 0x63
- 80012b6:	605a      	str	r2, [r3, #4]
+ 80012b4:	f240 32e7 	movw	r2, #999	; 0x3e7
+ 80012b8:	605a      	str	r2, [r3, #4]
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
- 80012b8:	4b1a      	ldr	r3, [pc, #104]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012ba:	2200      	movs	r2, #0
- 80012bc:	609a      	str	r2, [r3, #8]
+ 80012ba:	4b1a      	ldr	r3, [pc, #104]	; (8001324 <MX_TIM3_Init+0x94>)
+ 80012bc:	2200      	movs	r2, #0
+ 80012be:	609a      	str	r2, [r3, #8]
   htim3.Init.Period = 9999;
- 80012be:	4b19      	ldr	r3, [pc, #100]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012c0:	f242 720f 	movw	r2, #9999	; 0x270f
- 80012c4:	60da      	str	r2, [r3, #12]
+ 80012c0:	4b18      	ldr	r3, [pc, #96]	; (8001324 <MX_TIM3_Init+0x94>)
+ 80012c2:	f242 720f 	movw	r2, #9999	; 0x270f
+ 80012c6:	60da      	str	r2, [r3, #12]
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
- 80012c6:	4b17      	ldr	r3, [pc, #92]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012c8:	2200      	movs	r2, #0
- 80012ca:	611a      	str	r2, [r3, #16]
+ 80012c8:	4b16      	ldr	r3, [pc, #88]	; (8001324 <MX_TIM3_Init+0x94>)
+ 80012ca:	2200      	movs	r2, #0
+ 80012cc:	611a      	str	r2, [r3, #16]
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
- 80012cc:	4b15      	ldr	r3, [pc, #84]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012ce:	2200      	movs	r2, #0
- 80012d0:	619a      	str	r2, [r3, #24]
+ 80012ce:	4b15      	ldr	r3, [pc, #84]	; (8001324 <MX_TIM3_Init+0x94>)
+ 80012d0:	2200      	movs	r2, #0
+ 80012d2:	619a      	str	r2, [r3, #24]
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
- 80012d2:	4814      	ldr	r0, [pc, #80]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012d4:	f001 fc26 	bl	8002b24 <HAL_TIM_Base_Init>
- 80012d8:	4603      	mov	r3, r0
- 80012da:	2b00      	cmp	r3, #0
- 80012dc:	d001      	beq.n	80012e2 <MX_TIM3_Init+0x52>
+ 80012d4:	4813      	ldr	r0, [pc, #76]	; (8001324 <MX_TIM3_Init+0x94>)
+ 80012d6:	f001 fc25 	bl	8002b24 <HAL_TIM_Base_Init>
+ 80012da:	4603      	mov	r3, r0
+ 80012dc:	2b00      	cmp	r3, #0
+ 80012de:	d001      	beq.n	80012e4 <MX_TIM3_Init+0x54>
   {
     Error_Handler();
- 80012de:	f000 fb01 	bl	80018e4 <Error_Handler>
+ 80012e0:	f000 fb00 	bl	80018e4 <Error_Handler>
   }
   sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
- 80012e2:	f44f 5380 	mov.w	r3, #4096	; 0x1000
- 80012e6:	60bb      	str	r3, [r7, #8]
+ 80012e4:	f44f 5380 	mov.w	r3, #4096	; 0x1000
+ 80012e8:	60bb      	str	r3, [r7, #8]
   if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
- 80012e8:	f107 0308 	add.w	r3, r7, #8
- 80012ec:	4619      	mov	r1, r3
- 80012ee:	480d      	ldr	r0, [pc, #52]	; (8001324 <MX_TIM3_Init+0x94>)
- 80012f0:	f001 ff06 	bl	8003100 <HAL_TIM_ConfigClockSource>
- 80012f4:	4603      	mov	r3, r0
- 80012f6:	2b00      	cmp	r3, #0
- 80012f8:	d001      	beq.n	80012fe <MX_TIM3_Init+0x6e>
+ 80012ea:	f107 0308 	add.w	r3, r7, #8
+ 80012ee:	4619      	mov	r1, r3
+ 80012f0:	480c      	ldr	r0, [pc, #48]	; (8001324 <MX_TIM3_Init+0x94>)
+ 80012f2:	f001 ff05 	bl	8003100 <HAL_TIM_ConfigClockSource>
+ 80012f6:	4603      	mov	r3, r0
+ 80012f8:	2b00      	cmp	r3, #0
+ 80012fa:	d001      	beq.n	8001300 <MX_TIM3_Init+0x70>
   {
     Error_Handler();
- 80012fa:	f000 faf3 	bl	80018e4 <Error_Handler>
+ 80012fc:	f000 faf2 	bl	80018e4 <Error_Handler>
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
- 80012fe:	2300      	movs	r3, #0
- 8001300:	603b      	str	r3, [r7, #0]
+ 8001300:	2300      	movs	r3, #0
+ 8001302:	603b      	str	r3, [r7, #0]
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
- 8001302:	2300      	movs	r3, #0
- 8001304:	607b      	str	r3, [r7, #4]
+ 8001304:	2300      	movs	r3, #0
+ 8001306:	607b      	str	r3, [r7, #4]
   if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
- 8001306:	463b      	mov	r3, r7
- 8001308:	4619      	mov	r1, r3
- 800130a:	4806      	ldr	r0, [pc, #24]	; (8001324 <MX_TIM3_Init+0x94>)
- 800130c:	f002 f928 	bl	8003560 <HAL_TIMEx_MasterConfigSynchronization>
- 8001310:	4603      	mov	r3, r0
- 8001312:	2b00      	cmp	r3, #0
- 8001314:	d001      	beq.n	800131a <MX_TIM3_Init+0x8a>
+ 8001308:	463b      	mov	r3, r7
+ 800130a:	4619      	mov	r1, r3
+ 800130c:	4805      	ldr	r0, [pc, #20]	; (8001324 <MX_TIM3_Init+0x94>)
+ 800130e:	f002 f927 	bl	8003560 <HAL_TIMEx_MasterConfigSynchronization>
+ 8001312:	4603      	mov	r3, r0
+ 8001314:	2b00      	cmp	r3, #0
+ 8001316:	d001      	beq.n	800131c <MX_TIM3_Init+0x8c>
   {
     Error_Handler();
- 8001316:	f000 fae5 	bl	80018e4 <Error_Handler>
+ 8001318:	f000 fae4 	bl	80018e4 <Error_Handler>
   }
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
 
 }
- 800131a:	bf00      	nop
- 800131c:	3718      	adds	r7, #24
- 800131e:	46bd      	mov	sp, r7
- 8001320:	bd80      	pop	{r7, pc}
- 8001322:	bf00      	nop
+ 800131c:	bf00      	nop
+ 800131e:	3718      	adds	r7, #24
+ 8001320:	46bd      	mov	sp, r7
+ 8001322:	bd80      	pop	{r7, pc}
  8001324:	20000214 	.word	0x20000214
  8001328:	40000400 	.word	0x40000400
 
@@ -2457,7 +2456,7 @@ void Calculate_Velocity()
  8001798:	b580      	push	{r7, lr}
  800179a:	af00      	add	r7, sp, #0
 //	Velocity = (AbsDegree - AbsDegree_Past)/((TimeStamp - TimeStamp_Past)/1000000);
-	Velocity = (AbsDegree - AbsDegree_Past)/0.01;
+	Velocity = (AbsDegree - AbsDegree_Past)/0.1;
  800179c:	4b12      	ldr	r3, [pc, #72]	; (80017e8 <Calculate_Velocity+0x50>)
  800179e:	ed93 7a00 	vldr	s14, [r3]
  80017a2:	4b12      	ldr	r3, [pc, #72]	; (80017ec <Calculate_Velocity+0x54>)
@@ -2485,8 +2484,8 @@ void Calculate_Velocity()
  80017d8:	bf00      	nop
  80017da:	bd80      	pop	{r7, pc}
  80017dc:	f3af 8000 	nop.w
- 80017e0:	47ae147b 	.word	0x47ae147b
- 80017e4:	3f847ae1 	.word	0x3f847ae1
+ 80017e0:	9999999a 	.word	0x9999999a
+ 80017e4:	3fb99999 	.word	0x3fb99999
  80017e8:	20000098 	.word	0x20000098
  80017ec:	2000009c 	.word	0x2000009c
  80017f0:	200000a0 	.word	0x200000a0
@@ -2499,7 +2498,7 @@ void Calculate_Acceleration()
  80017f8:	b580      	push	{r7, lr}
  80017fa:	af00      	add	r7, sp, #0
 //	Acceleration = (Velocity - Velocity_Past)/((TimeStamp - TimeStamp_Past)/1000000);
-	Acceleration = (Velocity - Velocity_Past)/0.01;
+	Acceleration = (Velocity - Velocity_Past)/0.1;
  80017fc:	4b12      	ldr	r3, [pc, #72]	; (8001848 <Calculate_Acceleration+0x50>)
  80017fe:	ed93 7a00 	vldr	s14, [r3]
  8001802:	4b12      	ldr	r3, [pc, #72]	; (800184c <Calculate_Acceleration+0x54>)
@@ -2527,8 +2526,8 @@ void Calculate_Acceleration()
  8001838:	bf00      	nop
  800183a:	bd80      	pop	{r7, pc}
  800183c:	f3af 8000 	nop.w
- 8001840:	47ae147b 	.word	0x47ae147b
- 8001844:	3f847ae1 	.word	0x3f847ae1
+ 8001840:	9999999a 	.word	0x9999999a
+ 8001844:	3fb99999 	.word	0x3fb99999
  8001848:	200000a0 	.word	0x200000a0
  800184c:	200000a4 	.word	0x200000a4
  8001850:	200000a8 	.word	0x200000a8
